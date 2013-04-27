@@ -1,0 +1,248 @@
+package 
+{
+  import flash.display.*;
+	import flash.events.*;
+	import flash.net.URLLoader;
+	import flash.net.URLRequest;
+	import flash.net.URLLoaderDataFormat;
+	import flash.net.URLVariables;
+	import flash.text.TextField;
+	import flash.text.*;
+	import flash.utils.Timer;
+	import flash.net.URLRequestMethod;
+	import flash.net.navigateToURL;
+	import vk.APIConnection;
+	
+	/**
+	 * ...
+	 * @author alex
+	 */
+	public class States extends Screen 
+	{
+		private var Score_wall:Array = [];
+		private var Name_wall:Array = [];
+		private var ToScore:URLRequest
+		private var my_score:URLRequest = new URLRequest('http://alckevich.hut2.ru/my_score.php');
+		
+		private var ToScore_loader:URLLoader;
+		private var my_score_loader:URLLoader = new URLLoader();
+		
+		private var t2:TextField = new TextField;
+		private var t:TextField = new TextField;
+		private var str:String;
+		private var user:String;
+		private var num:Number;
+		private var Long:Number;
+		private var score:int;
+		private var score_sw:int;
+		private var name_sw:String;
+		
+		private var vars:URLVariables = new URLVariables();
+		private var time_for_Score:Timer = new Timer(3000, 1);
+		private var LD:MovieClip = new MovieClip;
+		public var Score_table:MovieClip = new MovieClip;
+		
+		private var back:Sprite = new Sprite;
+		private var back_0:Sprite = new Sprite;
+		private var back_01:Sprite = new Sprite;
+		private var back_1:Sprite = new Sprite;
+		private var back_2:Sprite;
+		
+		private var t_for_up:TextField = new TextField;
+		private var my_point:TextField = new TextField;
+		
+		private var for_move:Sprite = new Sprite;
+		public var table:MovieClip = new MovieClip;
+		
+		public var drag:Boolean = false;
+		public var close:MovieClip = new MovieClip;
+		public var button:Sprite = new Sprite;
+		
+	public function States() {
+			if (stage) start_init();
+			else addEventListener(Event.ADDED_TO_STAGE, start_init);
+		}
+	private function start_init(e:Event = null):void {	
+			back.graphics.beginFill(0xCCCCCC, 1);
+			back.graphics.drawRect(0, 0, 200, 205+5/2);
+			back.graphics.endFill();
+			table.addChild(back);
+			
+			back_0.graphics.beginFill(0x000000, 1);
+			back_0.graphics.drawRect(5/2, 15+15, 200-5, 190-15);
+			back_0.graphics.endFill();
+			table.addChild(back_0);
+			back_01.graphics.beginFill(0x000000, 1);
+			back_01.graphics.drawRect(5/2, 15, 200-5, 190);
+			back_01.graphics.endFill();
+			table.addChild(back_01);
+			
+			back_1.graphics.beginFill(0x8B0000, 1);
+			back_1.graphics.drawRect(5/2, 15, 200-5, 15);
+			back_1.graphics.endFill();
+			table.addChild(back_1);
+			
+			t_for_up.autoSize = TextFieldAutoSize.LEFT;
+			t_for_up.htmlText = '<b><font color="#000000" size="12" face="Calibri">' + "СТАТИСТИКА" + '</font></b>';
+			table.addChild(t_for_up);
+			
+			my_point.autoSize = TextFieldAutoSize.LEFT;
+			my_point.textColor = 0xFFFFFF;
+			my_point.x = 5;
+			my_point.y = back_1.y+back_1.height;
+			table.addChild(my_point);
+			
+			for_move.graphics.beginFill(0x8B0000, 0);
+			for_move.graphics.drawRect(0, 0, 200, 205+5/2-190);
+			for_move.graphics.endFill();
+			for_move.addEventListener(MouseEvent.MOUSE_DOWN, move_bar);
+			table.addChild(for_move);
+			
+			back_2 = new Sprite;
+			back_2.graphics.beginFill(0x222222, 1);
+			back_2.graphics.drawRect(-5, -3/2, 10, 3);
+			back_2.rotation = 45;
+			back_2.graphics.endFill();
+			close.addChild(back_2);
+			
+			back_2 = new Sprite;
+			back_2.graphics.beginFill(0x222222, 1);
+			back_2.graphics.drawRect(-5, -3/2, 10, 3);
+			back_2.rotation = -45;
+			back_2.graphics.endFill();
+			close.addChild(back_2);
+			close.x = 190;
+			close.y = 7;
+			close.buttonMode = true;
+			table.addChild(close);
+			
+			button.graphics.beginFill(0x00FFCC);
+			button.graphics.drawRect(0, 0, 10, 20);
+			button.graphics.endFill();
+			button.x = 200 - 10 - 5 / 2 - 0.5;
+			button.y = 31;
+			table.addChild(button);
+			button.addEventListener(MouseEvent.MOUSE_DOWN, down);
+			button.addEventListener(MouseEvent.MOUSE_OVER, over);
+			button.addEventListener(MouseEvent.MOUSE_OUT, out);
+			addEventListener(Event.ENTER_FRAME, frame);
+		
+			my_score.method = URLRequestMethod.POST;
+			
+			time_for_Score.addEventListener(TimerEvent.TIMER_COMPLETE, ReLoad_Score);
+			
+			time_for_Score.start();
+		
+			t.textColor = 0xFFFFFF;
+			t.width = 100;
+			t.autoSize = TextFieldAutoSize.LEFT;
+			Score_table.addChild(t);
+			Score_table.mask = back_0;
+			Score_table.y = 30;
+			Score_table.x = 5;
+			table.addChild(Score_table);
+			
+			addChild(table);
+		}
+		
+		public var isDragging_1:Boolean = false;
+		
+		private function over(e:MouseEvent):void {
+			isOver = true;
+			button.graphics.clear();
+			button.graphics.beginFill(0x5F9EA0);
+			button.graphics.drawRect(0, 0, 10, 30);
+			button.graphics.endFill();
+		}
+		private var isOver:Boolean = false;
+		private function out(e:MouseEvent):void {
+			isOver = false;
+		}
+		private function down(e:MouseEvent):void {
+			isDragging_1 = true;
+		}
+		private function frame(e:Event):void {
+			if (button.y <= 31) button.y = 31 , Score_table.y = 30;
+			if (button.y >= 205 - button.height - 1) button.y = 205 - button.height - 1, Score_table.y = 0 - (Score_table.height - 205);
+			if (!isDragging_1 && !isOver) {
+				button.graphics.clear();
+				button.graphics.beginFill(0xCCCCCC);
+				button.graphics.drawRect(0, 0, 10, 30);
+				button.graphics.endFill();
+			}
+			if (Score_table.height / 173 <= 1 && table.contains(button)) table.removeChild(button);
+			if (Score_table.height / 173 > 1 && !table.contains(button)) table.addChild(button);
+		}
+	private function move_bar(e:MouseEvent):void {
+			drag = true;
+	}
+	private function ReLoad_Score(e:TimerEvent):void {
+			ToScore = new URLRequest('http://alckevich.hut2.ru/score.php');
+			ToScore.method = URLRequestMethod.POST;
+			ToScore_loader = new URLLoader();
+			ToScore_loader.addEventListener(Event.COMPLETE, onComplete_load_Score);
+			ToScore_loader.load(ToScore);
+			time_for_Score.reset();
+			time_for_Score.start();
+		}
+		private function onComplete_load_Score(e:Event):void{
+			if (Score_table.contains(LD)) Score_table.removeChild(LD);
+			str = new String(e.target.data);
+			num = new Number(str.slice(0, str.indexOf("+")));
+			str=str.substring(str.indexOf("+")+1,str.length); 
+			for(var i:int=0;i<num;i++){
+			user = new String(str.slice(0, str.indexOf("+")));
+			str = str.substring(str.indexOf("+") + 1, str.length);
+			
+			score = new int(str.slice(0, str.indexOf("+")));
+			str = str.substring(str.indexOf("+") + 1, str.length);
+			
+			if (Name_wall.indexOf(user) < 0) {
+				Name_wall.push(user);
+				Score_wall.push(score);
+			}else {
+				Score_wall[Name_wall.indexOf(user)] = score;
+				}	
+			}
+			for (i = 0; i < Name_wall.length; i++) {
+				for (var j:int = 0; j < Name_wall.length; j++) {
+					if (Score_wall[i] > Score_wall[j]) {
+						score_sw = new int(Score_wall[i]);
+						Score_wall[i] = Score_wall[j];
+						Score_wall[j] = score_sw;
+						name_sw = new String(Name_wall[i]);
+						Name_wall[i] = Name_wall[j];
+						Name_wall[j] = name_sw;
+					}
+				}
+			}
+			t.text = "";
+			Long = new Number(0);
+			if (Name_wall.length > 30) {
+				Long = 30;
+			}else {
+				Long = Name_wall.length;
+			}
+			i = 1;
+			num = 1;
+			if(Long!=0)t.appendText("1. " + Name_wall[0] +"  -  " + Score_wall[0] + "\n");
+			while (i < Long) {
+				if (int(Score_wall[i]) != int(Score_wall[i - 1])) {
+					num++
+					t.text = t.text + (num) + ". " + Name_wall[i] +"  -  " + Score_wall[i] + "\n";
+				}else {
+					for (j = 0; j <= String(num).length; j++) {
+						t.appendText(" ");
+					}
+					t.appendText("  "+Name_wall[i] +"  -  " + Score_wall[i] + "\n");
+				}
+				if(Name_wall[i] == current_name.text){
+					my_point.text = num + ". " + current_name.text +"  -  " + Score_wall[i];
+				}
+				i++;
+			}
+			e.target.removeEventListener(Event.COMPLETE, onComplete_load_Score);
+		}
+	}
+	
+}
